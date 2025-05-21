@@ -6,16 +6,15 @@ import passport from "passport";
 
 import connectDB from "./config/db.js";
 import userRoutes from "./routes/userRoutes.js";
+import businessRoutes from "./routes/businessRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
+import { protectRoute } from "./middleware/protectRoute.js"; // import protectRoute
 import "./config/passport.js";
 
 dotenv.config();
 const PORT = process.env.PORT || 5000;
 
 const app = express();
-
-// MongoDB connection
-connectDB();
 
 // Middleware
 app.use(
@@ -39,13 +38,22 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 // Routes
-app.use("/api/users", userRoutes);
 app.use("/auth", authRoutes);
+// Protect user and business routes with protectRoute middleware
+app.use("/api/users", protectRoute, userRoutes);
+app.use("/api/business", protectRoute, businessRoutes);
 
 app.get("/", (req, res) => {
   res.send("Server is running!");
 });
 
-app.listen(PORT, () => {
-  console.log(`✅ Server listening on http://localhost:${PORT}`);
-});
+// Connect to DB and start server
+connectDB()
+  .then(() => {
+    app.listen(PORT, () => {
+      console.log(`✅ Server listening on http://localhost:${PORT}`);
+    });
+  })
+  .catch((err) => {
+    console.error("❌ Failed to connect to DB:", err);
+  });
